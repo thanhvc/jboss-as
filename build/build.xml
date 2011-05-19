@@ -51,6 +51,7 @@
         <mkdir dir="${output.dir}/domain/content"/>
         <mkdir dir="${output.dir}/standalone/lib/ext"/>
         <mkdir dir="${output.dir}/domain/lib/ext"/>
+        <mkdir dir="${filter.content.dir}"/>
     </target>
 
     <target name="modules">
@@ -78,7 +79,7 @@
         </module-def>
 
         <module-def name="ch.qos.cal10n">
-            <maven-resource group="ch.qos.cal10n" artifact="cal10n-api"/>
+            <maven-resource group="ch.qos.cal10n" artifact="cal10n-api" filter="true"/>
         </module-def>
 
         <module-def name="com.google.guava">
@@ -90,7 +91,7 @@
         </module-def>
 
         <module-def name="com.sun.jsf-impl">
-            <maven-resource group="com.sun.faces" artifact="jsf-impl"/>
+            <maven-resource group="com.sun.faces" artifact="jsf-impl" filter="true"/>
         </module-def>
 
         <module-def name="com.sun.xml.bind">
@@ -127,11 +128,11 @@
         </module-def>
 
         <module-def name="javax.el.api">
-            <maven-resource group="org.jboss.spec.javax.el" artifact="jboss-el-api_2.2_spec"/>
+            <maven-resource group="org.jboss.spec.javax.el" artifact="jboss-el-api_2.2_spec" filter="true" />
         </module-def>
 
         <module-def name="javax.enterprise.api">
-            <maven-resource group="javax.enterprise" artifact="cdi-api"/>
+            <maven-resource group="javax.enterprise" artifact="cdi-api" filter="true"/>
         </module-def>
 
         <module-def name="javax.enterprise.deploy.api">
@@ -139,11 +140,11 @@
         </module-def>
 
         <module-def name="javax.faces.api">
-            <maven-resource group="org.jboss.spec.javax.faces" artifact="jboss-jsf-api_2.0_spec"/>
+            <maven-resource group="org.jboss.spec.javax.faces" artifact="jboss-jsf-api_2.0_spec" filter="true"/>
         </module-def>
 
         <module-def name="javax.inject.api">
-            <maven-resource group="javax.inject" artifact="javax.inject"/>
+            <maven-resource group="javax.inject" artifact="javax.inject"  filter="true"/>
         </module-def>
 
         <module-def name="javax.interceptor.api">
@@ -389,7 +390,7 @@
         </module-def>
 
         <module-def name="org.javassist">
-            <maven-resource group="javassist" artifact="javassist"/>
+            <maven-resource group="javassist" artifact="javassist" filter="true"/>
         </module-def>
 
         <module-def name="org.jboss.arquillian.api">
@@ -831,15 +832,15 @@
         </module-def>
 
         <module-def name="org.jboss.weld.core">
-            <maven-resource group="org.jboss.weld" artifact="weld-core"/>
+            <maven-resource group="org.jboss.weld" artifact="weld-core" filter="true"/>
         </module-def>
 
         <module-def name="org.jboss.weld.api">
-            <maven-resource group="org.jboss.weld" artifact="weld-api"/>
+            <maven-resource group="org.jboss.weld" artifact="weld-api" filter="true"/>
         </module-def>
 
         <module-def name="org.jboss.weld.spi">
-            <maven-resource group="org.jboss.weld" artifact="weld-spi"/>
+            <maven-resource group="org.jboss.weld" artifact="weld-spi" filter="true"/>
         </module-def>
 
         <module-def name="org.jboss.ws.common">
@@ -907,24 +908,24 @@
             <maven-resource group="org.picketbox" artifact="picketbox-infinispan"/>
         </module-def>
 
-        <module-def name="org.slf4j.jcl-over-slf4j">
-            <maven-resource group="org.slf4j" artifact="jcl-over-slf4j"/>
-        </module-def>
-
         <module-def name="org.scannotation.scannotation">
             <maven-resource group="org.scannotation" artifact="scannotation"/>
         </module-def>
 
-        <module-def name="org.slf4j">
-            <maven-resource group="org.slf4j" artifact="slf4j-api"/>
+        <module-def name="org.slf4j.jcl-over-slf4j">
+            <maven-resource group="org.slf4j" artifact="jcl-over-slf4j" filter="true"/>
+        </module-def>
+
+        <module-def name="org.slf4j" >
+            <maven-resource group="org.slf4j" artifact="slf4j-api" filter="true"/>
         </module-def>
 
         <module-def name="org.slf4j.impl">
-            <maven-resource group="org.jboss.slf4j" artifact="slf4j-jboss-logmanager"/>
+            <maven-resource group="org.jboss.slf4j" artifact="slf4j-jboss-logmanager" filter="true"/>
         </module-def>
 
         <module-def name="org.slf4j.ext">
-            <maven-resource group="org.slf4j" artifact="slf4j-ext"/>
+            <maven-resource group="org.slf4j" artifact="slf4j-ext" filter="true"/>
         </module-def>
 
         <module-def name="org.w3c.css.sac">
@@ -1016,5 +1017,5 @@
         <delete file="maven-ant-tasks.jar"/>
     </target>
 
-    <target name="all" depends="clean-target, modules, bundles, copy-files, make-dirs"/>
+    <target name="all" depends="clean-target, make-dirs, modules, bundles, copy-files"/>
 </project>

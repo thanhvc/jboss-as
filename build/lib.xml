@@ -27,9 +27,9 @@
     <property name="output.dir" value="target/jboss-${jboss.as.release.version}"/>
     <property name="module.repo.output.dir" value="${output.dir}/modules"/>
     <property name="module.xml" value="module.xml"/>
+    <property name="filter.content.dir" value="${basedir}/${module.repo.output.dir}/org/jboss/as/server/main/filter-properties/META-INF" />
 
     <property name="bundle.repo.output.dir" value="${output.dir}/bundles"/>
-
 
     <taskdef name="jandex" classname="org.jboss.jandex.JandexAntTask" />
 
@@ -99,7 +99,7 @@
             </copy>
         </sequential>
     </macrodef>
-    
+
     <scriptdef name="define-module-dir" language="javascript">
         <attribute name="name"/>
         <attribute name="slot"/>
@@ -107,6 +107,7 @@
             name = attributes.get("name");
             name = name.replace(".", "/");
             project.setProperty("current.module.path", name + "/" + attributes.get("slot"));
+            project.setProperty("current.module.identifier", attributes.get("name") + ":" + attributes.get("slot"));
         ]]>
     </scriptdef>
 
@@ -119,11 +120,12 @@
             project.setProperty("current.bundle.path", name + "/" + attributes.get("slot"));
         ]]>
     </scriptdef>
-    
+
     <macrodef name="maven-resource" >
         <attribute name="group"/>
         <attribute name="artifact"/>
         <attribute name="jandex" default="false" />
+        <attribute name="filter" default="false" />
 
         <sequential>
             <!-- Copy the jar to the module dir -->
@@ -137,6 +139,8 @@
             <jandex run="@{jandex}" newJar="true" >
                 <fileset dir="${module.repo.output.dir}/${current.module.path}" />
             </jandex>
+
+            <create-filter-list run="@{filter}" outputfile="${filter.content.dir}/filtering.properties" identifier="${current.module.identifier}" path="${basedir}/${module.repo.output.dir}/${current.module.path}/${resourcename.@{group}.@{artifact}}" />
             <!-- Update the resource entry in module.xml -->
             <define-resource-root path="${resourcename.@{group}.@{artifact}}" jandex="@{jandex}"/>
             <replace file="${module.repo.output.dir}/${current.module.path}/${module.xml}">
@@ -150,6 +154,7 @@
         <attribute name="artifact"/>
         <attribute name="classifier"/>
         <attribute name="jandex" default="false" />
+        <attribute name="filter" default="false" />
 
         <sequential>
             <!-- Copy the jar to the module dir -->
@@ -160,6 +165,11 @@
             </copy>
 
             <basename file="${@{group}:@{artifact}:jar:@{classifier}}" property="resourcename.@{group}.@{artifact}.@{classifier}"/>
+            <!-- Generate the Jandex Index -->
+            <jandex run="@{jandex}" newJar="true" >
+                <fileset dir="${module.repo.output.dir}/${current.module.path}" />
+            </jandex>
+            <create-filter-list run="@{filter}" outputfile="${filter.content.dir}/filtering.properties" identifier="${current.module.identifier}" path="${basedir}/${module.repo.output.dir}/${current.module.path}/${resourcename.@{group}.@{artifact}.@{classifier}}" />
 
             <!-- Update the resource entry in module.xml -->
             <define-resource-root path="${resourcename.@{group}.@{artifact}.@{classifier}}"/>
@@ -183,6 +193,59 @@
                 root = root + "\n\t<resource-root path=\"" + path.replace(".jar","-jandex.jar") + "\"/>";
             }
             project.setProperty("current.resource.root", root);
+        ]]>
+    </scriptdef>
+
+    <!-- Automatically generates a list of packages that should be excluded from user deployments-->
+    <!-- by examining the contents of the jars in the equivalent module -->
+    <scriptdef name="create-filter-list" language="javascript" >
+        <attribute name="run" />
+        <attribute name="path" />
+        <attribute name="identifier" />
+        <attribute name="outputfile"/>
+        <![CDATA[
+            run = attributes.get("run");
+            if(run == "true") {
+
+                outputfile = attributes.get("outputfile");
+                moduleIdentifier = attributes.get("identifier");
+                path = attributes.get("path");
+
+                importPackage(java.io);
+                importPackage(java.util);
+
+                directories = new TreeMap();
+                stream = new java.util.zip.ZipInputStream(new FileInputStream(path));
+                entry = stream.getNextEntry()
+                while (entry != null) {
+                    if (!entry.isDirectory()) {
+                        //we do not want to filter empty directories
+                        //so we add a dir entry for every file that we find
+                        //this prevents entries like 'org' and 'com'
+                        //from being included in the list
+                        name = entry.getName();
+                        index = name.lastIndexOf('/')
+                        if(index != -1) {
+                            dirName = name.substring(0, index);
+                            if (!dirName.startsWith("META-INF")) {
+                                directories.put(dirName, moduleIdentifier);
+                            }
+                        }
+                    }
+                    entry = stream.getNextEntry();
+                }
+                writer = new FileWriter(outputfile, true);
+
+                entries = directories.entrySet();
+                it = entries.iterator();
+                while(it.hasNext()) {
+                    val = it.next();
+                    pkg = val.getKey();
+                    pkg = pkg.replace('/','.');
+                    writer.write(pkg + "=" + val.getValue() + "\n");
+                }
+                writer.close();
+            }
         ]]>
     </scriptdef>
 

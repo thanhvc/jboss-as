@@ -28,6 +28,7 @@
 
     <resources>
         <!-- Insert resources here -->
+        <resource-root path="filter-properties"/>
     </resources>
 
     <dependencies>

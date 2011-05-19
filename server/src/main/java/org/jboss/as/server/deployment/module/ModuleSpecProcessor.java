@@ -22,10 +22,6 @@
 
 package org.jboss.as.server.deployment.module;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.jboss.as.server.deployment.AttachmentKey;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
@@ -42,10 +38,14 @@ import org.jboss.modules.ResourceLoaderSpec;
 import org.jboss.modules.filter.MultiplePathFilterBuilder;
 import org.jboss.modules.filter.PathFilter;
 import org.jboss.modules.filter.PathFilters;
+import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ValueService;
-import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.value.ImmediateValue;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Processor responsible for creating the module spec service for this deployment. Once the module spec service is created the
@@ -113,8 +113,8 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
     }
 
     private ServiceName createModuleService(DeploymentPhaseContext phaseContext, final DeploymentUnit deploymentUnit,
-            final List<ResourceRoot> resourceRoots, final ModuleSpecification moduleSpecification,
-            final ModuleIdentifier moduleIdentifier) throws DeploymentUnitProcessingException {
+                                            final List<ResourceRoot> resourceRoots, final ModuleSpecification moduleSpecification,
+                                            final ModuleIdentifier moduleIdentifier) throws DeploymentUnitProcessingException {
         final ModuleSpec.Builder specBuilder = ModuleSpec.build(moduleIdentifier);
         final List<ModuleDependency> dependencies = moduleSpecification.getDependencies();
 
@@ -192,8 +192,19 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
     private static void addResourceRoot(final ModuleSpec.Builder specBuilder, final ResourceRoot resource)
             throws DeploymentUnitProcessingException {
         try {
+            final PathFilter exportFilter;
+            if (resource.getExportFilters().isEmpty()) {
+                exportFilter = PathFilters.acceptAll();
+            } else {
+                final MultiplePathFilterBuilder exportBuilder = PathFilters.multiplePathFilterBuilder(true);
+                for (FilterSpecification filter : resource.getExportFilters()) {
+                    exportBuilder.addFilter(filter.getPathFilter(), filter.isInclude());
+                }
+                exportFilter = exportBuilder.create();
+            }
+
             specBuilder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(new VFSResourceLoader(resource
-                    .getRootName(), resource.getRoot())));
+                    .getRootName(), resource.getRoot()), exportFilter));
         } catch (IOException e) {
             throw new DeploymentUnitProcessingException("Failed to create VFSResourceLoader for root ["
                     + resource.getRootName() + "]", e);
