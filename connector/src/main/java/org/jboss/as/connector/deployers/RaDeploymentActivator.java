@@ -28,7 +28,6 @@ import org.jboss.as.connector.deployers.processors.IronJacamarDeploymentParsingP
 import org.jboss.as.connector.deployers.processors.ParsedRaDeploymentProcessor;
 import org.jboss.as.connector.deployers.processors.RaDeploymentParsingProcessor;
 import org.jboss.as.connector.deployers.processors.RaStructureProcessor;
-import org.jboss.as.connector.deployers.processors.RaXmlDeploymentProcessor;
 import org.jboss.as.connector.deployers.processors.RarDependencyProcessor;
 import org.jboss.as.connector.deployers.processors.StructureDriverProcessor;
 import org.jboss.as.connector.mdr.MdrService;
@@ -37,7 +36,6 @@ import org.jboss.as.connector.registry.ResourceAdapterDeploymentRegistryService;
 import org.jboss.as.connector.services.ManagementRepositoryService;
 import org.jboss.as.server.BootOperationContext;
 import org.jboss.as.server.deployment.Phase;
-import org.jboss.jca.core.api.management.ManagementRepository;
 import org.jboss.jca.core.spi.mdr.MetadataRepository;
 import org.jboss.msc.service.ServiceTarget;
 
@@ -74,8 +72,6 @@ public class RaDeploymentActivator {
         updateContext.addDeploymentProcessor(Phase.PARSE, Phase.PARSE_IRON_JACAMAR_DEPLOYMENT,
                 new IronJacamarDeploymentParsingProcessor());
         updateContext.addDeploymentProcessor(Phase.INSTALL, Phase.INSTALL_RA_DEPLOYMENT, new ParsedRaDeploymentProcessor());
-        updateContext.addDeploymentProcessor(Phase.INSTALL, Phase.INSTALL_RA_XML_DEPLOYMENT, new RaXmlDeploymentProcessor(
-                mdrService.getValue()));
         updateContext.addDeploymentProcessor(Phase.STRUCTURE, Phase.STRUCTURE_RAR, new RaStructureProcessor());
         updateContext.addDeploymentProcessor(Phase.STRUCTURE, Phase.STRUCTURE_JDBC_DRIVER, new StructureDriverProcessor());
         updateContext.addDeploymentProcessor(Phase.INSTALL, Phase.INSTALL_JDBC_DRIVER, new DriverProcessor());

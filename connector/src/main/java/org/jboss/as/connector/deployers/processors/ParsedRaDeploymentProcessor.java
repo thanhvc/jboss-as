@@ -30,6 +30,7 @@ import org.jboss.as.connector.metadata.xmldescriptors.IronJacamarXmlDescriptor;
 import org.jboss.as.connector.registry.ResourceAdapterDeploymentRegistry;
 import org.jboss.as.connector.subsystems.jca.JcaSubsystemConfiguration;
 import org.jboss.as.naming.service.NamingService;
+import org.jboss.as.security.service.SubjectFactoryService;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
@@ -37,26 +38,25 @@ import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.annotation.AnnotationIndexUtils;
 import org.jboss.as.server.deployment.module.ResourceRoot;
-import org.jboss.as.txn.TxnServices;
 import org.jboss.jandex.Index;
 import org.jboss.jca.common.annotations.Annotations;
 import org.jboss.jca.common.api.metadata.ironjacamar.IronJacamar;
 import org.jboss.jca.common.api.metadata.ra.Connector;
+import org.jboss.jca.common.api.metadata.resourceadapter.ResourceAdapters;
+import org.jboss.jca.common.metadata.ironjacamar.IronJacamarImpl;
 import org.jboss.jca.common.metadata.merge.Merger;
 import org.jboss.jca.common.spi.annotations.repository.AnnotationRepository;
 import org.jboss.jca.core.api.connectionmanager.ccm.CachedConnectionManager;
 import org.jboss.jca.core.api.management.ManagementRepository;
 import org.jboss.jca.core.spi.mdr.MetadataRepository;
-import org.jboss.jca.core.spi.naming.JndiStrategy;
 import org.jboss.jca.core.spi.rar.ResourceAdapterRepository;
 import org.jboss.jca.core.spi.transaction.TransactionIntegration;
 import org.jboss.logging.Logger;
 import org.jboss.modules.Module;
+import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.security.SubjectFactory;
-import org.jboss.as.security.service.SubjectFactoryService;
-
 
 import java.util.Map;
 import java.util.Map.Entry;
@@ -64,6 +64,7 @@ import java.util.Map.Entry;
 /**
  * DeploymentUnitProcessor responsible for using IronJacamar metadata and create
  * service for ResourceAdapter.
+ *
  * @author <a href="mailto:stefano.maestri@redhat.com">Stefano Maestri</a>
  * @author <a href="jesper.pedersen@jboss.org">Jesper Pedersen</a>
  */
@@ -77,12 +78,14 @@ public class ParsedRaDeploymentProcessor implements DeploymentUnitProcessor {
     /**
      * Process a deployment for a Connector. Will install a {@Code
      * JBossService} for this ResourceAdapter.
+     *
      * @param phaseContext the deployment unit context
      * @throws DeploymentUnitProcessingException
+     *
      */
     public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         final ConnectorXmlDescriptor connectorXmlDescriptor = phaseContext.getDeploymentUnit().getAttachment(ConnectorXmlDescriptor.ATTACHMENT_KEY);
-        if(connectorXmlDescriptor == null) {
+        if (connectorXmlDescriptor == null) {
             return;  // Skip non ra deployments
         }
 
@@ -97,7 +100,7 @@ public class ParsedRaDeploymentProcessor implements DeploymentUnitProcessor {
         final ClassLoader classLoader = module.getClassLoader();
 
         Connector cmd = connectorXmlDescriptor != null ? connectorXmlDescriptor.getConnector() : null;
-        final IronJacamar ijmd = ironJacamarXmlDescriptor != null ? ironJacamarXmlDescriptor.getIronJacamar() : null;
+        IronJacamar ijmd = ironJacamarXmlDescriptor != null ? ironJacamarXmlDescriptor.getIronJacamar() : null;
 
         try {
             // Annotation merging
@@ -105,8 +108,29 @@ public class ParsedRaDeploymentProcessor implements DeploymentUnitProcessor {
             Map<ResourceRoot, Index> indexes = AnnotationIndexUtils.getAnnotationIndexes(deploymentUnit);
             for (Entry<ResourceRoot, Index> entry : indexes.entrySet()) {
                 AnnotationRepository repository = new JandexAnnotationRepositoryImpl(entry.getValue(), classLoader);
-                    cmd = annotator.merge(cmd, repository, classLoader);
+                cmd = annotator.merge(cmd, repository, classLoader);
             }
+
+            try {
+                final ServiceController<?> raService = phaseContext.getServiceRegistry().getService(
+                        ConnectorServices.RESOURCEADAPTERS_SERVICE);
+                if (raService != null) {
+                    final ResourceAdapters raxmls = ((ResourceAdapters) raService.getValue());
+                    if (raxmls != null) {
+                        for (org.jboss.jca.common.api.metadata.resourceadapter.ResourceAdapter raxml : raxmls.getResourceAdapters()) {
+                            String archive = raxml.getArchive();
+                            if (deploymentUnit.getName().endsWith(archive) || deploymentUnit.getName().endsWith(archive.substring(0, archive.indexOf(".rar")))) {
+                                ijmd = new IronJacamarImpl(raxml.getTransactionSupport(), raxml.getConfigProperties(), raxml.getAdminObjects(), raxml.getConnectionDefinitions(), raxml.getBeanValidationGroups(), raxml.getBootstrapContext());
+                                break;
+
+                            }
+                        }
+                    }
+                }
+            } catch (Throwable t) {
+                throw new DeploymentUnitProcessingException(t);
+            }
+
             // FIXME: when the connector is null the Iron Jacamar data is ignored
             if (cmd != null) {
                 // Validate metadata
@@ -114,7 +138,9 @@ public class ParsedRaDeploymentProcessor implements DeploymentUnitProcessor {
 
                 // Merge metadata
                 cmd = (new Merger()).mergeConnectorWithCommonIronJacamar(ijmd, cmd);
+
             }
+
 
             final ResourceAdapterDeploymentService raDeployementService = new ResourceAdapterDeploymentService(connectorXmlDescriptor, cmd, ijmd, module);
 
@@ -130,7 +156,7 @@ public class ParsedRaDeploymentProcessor implements DeploymentUnitProcessor {
                     .addDependency(ConnectorServices.CONNECTOR_CONFIG_SERVICE, JcaSubsystemConfiguration.class, raDeployementService.getConfigInjector())
                     .addDependency(SubjectFactoryService.SERVICE_NAME, SubjectFactory.class, raDeployementService.getSubjectFactoryInjector())
                     .addDependency(ConnectorServices.CCM_SERVICE, CachedConnectionManager.class, raDeployementService.getCcmInjector())
-                        .addDependency(NamingService.SERVICE_NAME)
+                    .addDependency(NamingService.SERVICE_NAME)
                     .setInitialMode(Mode.ACTIVE)
                     .install();
         } catch (Throwable t) {

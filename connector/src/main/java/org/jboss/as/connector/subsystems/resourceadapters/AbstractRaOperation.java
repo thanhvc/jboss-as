@@ -1,48 +1,5 @@
 package org.jboss.as.connector.subsystems.resourceadapters;
 
-import static org.jboss.as.connector.subsystems.resourceadapters.Constants.ADMIN_OBJECTS;
-import static org.jboss.as.connector.subsystems.resourceadapters.Constants.ALLOCATION_RETRY;
-import static org.jboss.as.connector.subsystems.resourceadapters.Constants.ALLOCATION_RETRY_WAIT_MILLIS;
-import static org.jboss.as.connector.subsystems.resourceadapters.Constants.APPLICATION;
-import static org.jboss.as.connector.subsystems.resourceadapters.Constants.ARCHIVE;
-import static org.jboss.as.connector.pool.Constants.BACKGROUNDVALIDATION;
-import static org.jboss.as.connector.pool.Constants.BACKGROUNDVALIDATIONMINUTES;
-import static org.jboss.as.connector.subsystems.resourceadapters.Constants.BEANVALIDATIONGROUPS;
-import static org.jboss.as.connector.pool.Constants.BLOCKING_TIMEOUT_WAIT_MILLIS;
-import static org.jboss.as.connector.subsystems.resourceadapters.Constants.BOOTSTRAPCONTEXT;
-import static org.jboss.as.connector.subsystems.resourceadapters.Constants.CLASS_NAME;
-import static org.jboss.as.connector.subsystems.resourceadapters.Constants.CONFIG_PROPERTIES;
-import static org.jboss.as.connector.subsystems.resourceadapters.Constants.CONNECTIONDEFINITIONS;
-import static org.jboss.as.connector.subsystems.resourceadapters.Constants.ENABLED;
-import static org.jboss.as.connector.subsystems.resourceadapters.Constants.FLUSH_STRATEGY;
-import static org.jboss.as.connector.pool.Constants.IDLETIMEOUTMINUTES;
-import static org.jboss.as.connector.subsystems.resourceadapters.Constants.JNDI_NAME;
-import static org.jboss.as.connector.pool.Constants.MAX_POOL_SIZE;
-import static org.jboss.as.connector.pool.Constants.MIN_POOL_SIZE;
-import static org.jboss.as.connector.subsystems.resourceadapters.Constants.NO_RECOVERY;
-import static org.jboss.as.connector.subsystems.resourceadapters.Constants.POOL_NAME;
-import static org.jboss.as.connector.pool.Constants.POOL_PREFILL;
-import static org.jboss.as.connector.pool.Constants.POOL_USE_STRICT_MIN;
-import static org.jboss.as.connector.subsystems.resourceadapters.Constants.RECOVERLUGIN_CLASSNAME;
-import static org.jboss.as.connector.subsystems.resourceadapters.Constants.RECOVERLUGIN_PROPERTIES;
-import static org.jboss.as.connector.subsystems.resourceadapters.Constants.RECOVERY_PASSWORD;
-import static org.jboss.as.connector.subsystems.resourceadapters.Constants.RECOVERY_SECURITY_DOMAIN;
-import static org.jboss.as.connector.subsystems.resourceadapters.Constants.RECOVERY_USERNAME;
-import static org.jboss.as.connector.subsystems.resourceadapters.Constants.RESOURCEADAPTERS;
-import static org.jboss.as.connector.subsystems.resourceadapters.Constants.SECURITY_DOMAIN;
-import static org.jboss.as.connector.subsystems.resourceadapters.Constants.SECURITY_DOMAIN_AND_APPLICATION;
-import static org.jboss.as.connector.subsystems.resourceadapters.Constants.TRANSACTIONSUPPORT;
-import static org.jboss.as.connector.subsystems.resourceadapters.Constants.USE_CCM;
-import static org.jboss.as.connector.pool.Constants.USE_FAST_FAIL;
-import static org.jboss.as.connector.subsystems.resourceadapters.Constants.USE_JAVA_CONTEXT;
-import static org.jboss.as.connector.subsystems.resourceadapters.Constants.XA_RESOURCE_TIMEOUT;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.jboss.as.connector.subsystems.resourceadapters.ResourceAdaptersService.ModifiableResourceAdapeters;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
 import org.jboss.jca.common.api.metadata.common.CommonAdminObject;
@@ -67,50 +24,54 @@ import org.jboss.jca.common.metadata.common.CommonValidationImpl;
 import org.jboss.jca.common.metadata.common.CredentialImpl;
 import org.jboss.jca.common.metadata.resourceadapter.ResourceAdapterImpl;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.jboss.as.connector.pool.Constants.*;
+import static org.jboss.as.connector.subsystems.resourceadapters.Constants.*;
+
 public abstract class AbstractRaOperation {
 
-    protected ModifiableResourceAdapeters buildResourceAdaptersObject(ModelNode operation) throws OperationFailedException {
-        List<ResourceAdapter> resourceAdapters = new ArrayList<ResourceAdapter>();
-        if (operation.hasDefined(RESOURCEADAPTERS)) {
-            for (ModelNode raNode : operation.get(RESOURCEADAPTERS).asList()) {
-                Map<String, String> configProperties = new HashMap<String, String>(raNode.get(CONFIG_PROPERTIES).asList()
-                        .size());
-                for (ModelNode property : raNode.get(CONFIG_PROPERTIES).asList()) {
-                    configProperties.put(property.asProperty().getName(), property.asString());
-                }
-                String archive = getStringIfSetOrGetDefault(operation, ARCHIVE, null);
-                TransactionSupportEnum transactionSupport = operation.hasDefined(TRANSACTIONSUPPORT) ? TransactionSupportEnum
-                        .valueOf(operation.get(TRANSACTIONSUPPORT).asString()) : null;
-                String bootstrapContext = getStringIfSetOrGetDefault(operation, BOOTSTRAPCONTEXT, null);
-                List<String> beanValidationGroups = new ArrayList<String>(operation.get(BEANVALIDATIONGROUPS).asList().size());
-                for (ModelNode beanValidtion : operation.get(BEANVALIDATIONGROUPS).asList()) {
-                    beanValidationGroups.add(beanValidtion.asString());
-                }
+    protected ResourceAdapter buildResourceAdapterObject(ModelNode raNode) throws OperationFailedException {
 
-                ResourceAdapter ra;
-                try {
-                    ra = new ResourceAdapterImpl(archive, transactionSupport, buildConnectionDefinitionObject(operation),
-                            buildAdminObjects(operation), configProperties, beanValidationGroups, bootstrapContext);
-                } catch (ValidateException e) {
-                    throw new OperationFailedException(e, operation);
-                }
 
-                resourceAdapters.add(ra);
+        Map<String, String> configProperties = new HashMap<String, String>();
+        if (raNode.has(CONFIG_PROPERTIES) && raNode.get(CONFIG_PROPERTIES).isDefined()) {
+            for (ModelNode property : raNode.get(CONFIG_PROPERTIES).asList()) {
+                configProperties.put(property.asProperty().getName(), property.asString());
             }
         }
-
-        return new ModifiableResourceAdapeters(resourceAdapters);
-
+        String archive = getStringIfSetOrGetDefault(raNode, ARCHIVE, null);
+        TransactionSupportEnum transactionSupport = raNode.hasDefined(TRANSACTIONSUPPORT) ? TransactionSupportEnum
+                .valueOf(raNode.get(TRANSACTIONSUPPORT).asString()) : null;
+        String bootstrapContext = getStringIfSetOrGetDefault(raNode, BOOTSTRAPCONTEXT, null);
+        List<String> beanValidationGroups = new ArrayList<String>();
+        if (raNode.has(BEANVALIDATIONGROUPS) && raNode.get(BEANVALIDATIONGROUPS).isDefined()) {
+            for (ModelNode beanValidtion : raNode.get(BEANVALIDATIONGROUPS).asList()) {
+                beanValidationGroups.add(beanValidtion.asString());
+            }
+        }
+        ResourceAdapter ra;
+        try {
+            ra = new ResourceAdapterImpl(archive, transactionSupport, buildConnectionDefinitionObject(raNode),
+                    buildAdminObjects(raNode), configProperties, beanValidationGroups, bootstrapContext);
+        } catch (ValidateException e) {
+            throw new OperationFailedException(e, raNode);
+        }
+        return ra;
     }
 
     private List<CommonConnDef> buildConnectionDefinitionObject(ModelNode parentNode) throws ValidateException {
         List<CommonConnDef> connDefs = new ArrayList<CommonConnDef>();
 
         for (ModelNode conDefNode : parentNode.get(CONNECTIONDEFINITIONS).asList()) {
-            Map<String, String> configProperties = new HashMap<String, String>(conDefNode.get(CONFIG_PROPERTIES).asList()
-                    .size());
-            for (ModelNode property : conDefNode.get(CONFIG_PROPERTIES).asList()) {
-                configProperties.put(property.asProperty().getName(), property.asString());
+            Map<String, String> configProperties = new HashMap<String, String>();
+            if (conDefNode.has(CONFIG_PROPERTIES) && conDefNode.get(CONFIG_PROPERTIES).isDefined()) {
+                for (ModelNode property : conDefNode.get(CONFIG_PROPERTIES).asList()) {
+                    configProperties.put(property.asProperty().getName(), property.asString());
+                }
             }
             String className = getStringIfSetOrGetDefault(conDefNode, CLASS_NAME, null);
             String jndiName = getStringIfSetOrGetDefault(conDefNode, JNDI_NAME, null);
@@ -138,7 +99,10 @@ public abstract class AbstractRaOperation {
             String securityDomain = getStringIfSetOrGetDefault(conDefNode, SECURITY_DOMAIN, null);
             String securityDomainAndApplication = getStringIfSetOrGetDefault(conDefNode, SECURITY_DOMAIN_AND_APPLICATION, null);
             boolean application = getBooleanIfSetOrGetDefault(conDefNode, APPLICATION, false);
-            CommonSecurity security = new CommonSecurityImpl(securityDomain, securityDomainAndApplication, application);
+            CommonSecurity security = null;
+            if (!isEmpty(securityDomain) || !isEmpty(securityDomainAndApplication)) {
+                security = new CommonSecurityImpl(securityDomain, securityDomainAndApplication, application);
+            }
 
             Long backgroundValidationMinutes = getLongIfSetOrGetDefault(conDefNode, BACKGROUNDVALIDATIONMINUTES, null);
             boolean backgroundValidation = getBooleanIfSetOrGetDefault(conDefNode, BACKGROUNDVALIDATION, false);
@@ -162,25 +126,32 @@ public abstract class AbstractRaOperation {
         return connDefs;
     }
 
+    private boolean isEmpty(final String string) {
+        return string == null || string.isEmpty();
+    }
+
     private List<CommonAdminObject> buildAdminObjects(ModelNode parentNode) {
         List<CommonAdminObject> adminObjets = new ArrayList<CommonAdminObject>();
+        if (parentNode.has(ADMIN_OBJECTS) && parentNode.get(ADMIN_OBJECTS).isDefined()) {
+            for (ModelNode adminObject : parentNode.get(ADMIN_OBJECTS).asList()) {
+                Map<String, String> configProperties = new HashMap<String, String>(adminObject.get(CONFIG_PROPERTIES).asList()
+                        .size());
+                if (adminObject.has(CONFIG_PROPERTIES)) {
+                    for (ModelNode property : adminObject.get(CONFIG_PROPERTIES).asList()) {
+                        configProperties.put(property.asProperty().getName(), property.asString());
+                    }
+                }
+                String className = getStringIfSetOrGetDefault(adminObject, CLASS_NAME, null);
+                String jndiName = getStringIfSetOrGetDefault(adminObject, JNDI_NAME, null);
+                String poolName = getStringIfSetOrGetDefault(adminObject, POOL_NAME, null);
+                boolean enabled = getBooleanIfSetOrGetDefault(adminObject, ENABLED, false);
+                boolean useJavaContext = getBooleanIfSetOrGetDefault(adminObject, USE_JAVA_CONTEXT, false);
 
-        for (ModelNode adminObject : parentNode.get(ADMIN_OBJECTS).asList()) {
-            Map<String, String> configProperties = new HashMap<String, String>(adminObject.get(CONFIG_PROPERTIES).asList()
-                    .size());
-            for (ModelNode property : adminObject.get(CONFIG_PROPERTIES).asList()) {
-                configProperties.put(property.asProperty().getName(), property.asString());
+                CommonAdminObject adminObjet = new CommonAdminObjectImpl(configProperties, className, jndiName, poolName, enabled,
+                        useJavaContext);
+
+                adminObjets.add(adminObjet);
             }
-            String className = getStringIfSetOrGetDefault(adminObject, CLASS_NAME, null);
-            String jndiName = getStringIfSetOrGetDefault(adminObject, JNDI_NAME, null);
-            String poolName = getStringIfSetOrGetDefault(adminObject, POOL_NAME, null);
-            boolean enabled = getBooleanIfSetOrGetDefault(adminObject, ENABLED, false);
-            boolean useJavaContext = getBooleanIfSetOrGetDefault(adminObject, USE_JAVA_CONTEXT, false);
-
-            CommonAdminObject adminObjet = new CommonAdminObjectImpl(configProperties, className, jndiName, poolName, enabled,
-                    useJavaContext);
-
-            adminObjets.add(adminObjet);
         }
         return adminObjets;
     }

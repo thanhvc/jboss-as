@@ -22,11 +22,6 @@
 
 package org.jboss.as.connector.subsystems.resourceadapters;
 
-import static org.jboss.as.connector.subsystems.resourceadapters.Constants.ARCHIVE;
-import static org.jboss.as.connector.subsystems.resourceadapters.Constants.RESOURCEADAPTERS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-
 import org.jboss.as.connector.ConnectorServices;
 import org.jboss.as.connector.subsystems.resourceadapters.ResourceAdaptersService.ModifiableResourceAdapeters;
 import org.jboss.as.controller.BasicOperationResult;
@@ -40,7 +35,15 @@ import org.jboss.as.controller.RuntimeTask;
 import org.jboss.as.controller.RuntimeTaskContext;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.dmr.ModelNode;
+import org.jboss.jca.common.api.metadata.resourceadapter.ResourceAdapter;
 import org.jboss.msc.service.ServiceController;
+
+import java.util.Collections;
+
+import static org.jboss.as.connector.subsystems.resourceadapters.Constants.ARCHIVE;
+import static org.jboss.as.connector.subsystems.resourceadapters.Constants.RESOURCEADAPTERS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
 /**
  * @author @author <a href="mailto:stefano.maestri@redhat.com">Stefano
@@ -70,13 +73,12 @@ public class RaRemove extends AbstractRaOperation implements ModelRemoveOperatio
         if (context.getRuntimeContext() != null) {
             context.getRuntimeContext().setRuntimeTask(new RuntimeTask() {
                 public void execute(RuntimeTaskContext context) throws OperationFailedException {
-                    ModifiableResourceAdapeters resourceAdapters = buildResourceAdaptersObject(operation);
+                    ResourceAdapter resourceAdapter = buildResourceAdapterObject(operation);
 
                     final ServiceController<?> raService = context.getServiceRegistry().getService(
                             ConnectorServices.RESOURCEADAPTERS_SERVICE);
                     if (raService != null) {
-                        ((ModifiableResourceAdapeters) raService.getValue()).removeAllResourceAdapters(resourceAdapters
-                                .getResourceAdapters());
+                        ((ModifiableResourceAdapeters) raService.getValue()).removeAllResourceAdapters(Collections.singleton(resourceAdapter));
                     }
 
                     resultHandler.handleResultComplete();

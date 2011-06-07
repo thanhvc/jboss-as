@@ -336,7 +336,6 @@ public enum Phase {
     public static final int INSTALL_RA_DEPLOYMENT                       = 0x0800;
     public static final int INSTALL_SERVICE_DEPLOYMENT                  = 0x0900;
     public static final int INSTALL_MC_BEAN_DEPLOYMENT                  = 0x0A00;
-    public static final int INSTALL_RA_XML_DEPLOYMENT                   = 0x0B00;
     public static final int INSTALL_EE_COMP_LAZY_BINDING_SOURCE_HANDLER = 0x0C00;
     public static final int INSTALL_WS_LAZY_BINDING_SOURCE_HANDLER      = 0x0D00;
     public static final int INSTALL_EE_CLASS_CONFIG                     = 0x1100;

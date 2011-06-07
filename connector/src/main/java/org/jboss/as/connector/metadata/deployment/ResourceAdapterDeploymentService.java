@@ -33,6 +33,8 @@ import org.jboss.jca.common.api.metadata.ra.Connector;
 import org.jboss.jca.common.api.metadata.ra.Connector.Version;
 import org.jboss.jca.common.api.metadata.ra.ResourceAdapter1516;
 import org.jboss.jca.common.api.metadata.ra.ra10.ResourceAdapter10;
+import org.jboss.jca.common.api.metadata.resourceadapter.ResourceAdapters;
+import org.jboss.jca.core.api.management.ConnectionFactory;
 import org.jboss.jca.deployers.common.CommonDeployment;
 import org.jboss.logging.Logger;
 import org.jboss.modules.Module;
@@ -43,6 +45,7 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
+import org.jboss.msc.value.InjectedValue;
 
 import java.io.File;
 import java.net.URL;
@@ -65,6 +68,7 @@ public final class ResourceAdapterDeploymentService extends AbstractResourceAdap
     private final ConnectorXmlDescriptor connectorXmlDescriptor;
     private final Connector cmd;
     private final IronJacamar ijmd;
+    private final InjectedValue<ResourceAdapters> resourceAdaptors = new InjectedValue<ResourceAdapters>();
 
     public ResourceAdapterDeploymentService(final ConnectorXmlDescriptor connectorXmlDescriptor, final Connector cmd,
             final IronJacamar ijmd, final Module module) {
@@ -101,6 +105,10 @@ public final class ResourceAdapterDeploymentService extends AbstractResourceAdap
                 .addService(ServiceName.of(value.getDeployment().getDeploymentName()),
                         new ResourceAdapterService(value.getDeployment().getResourceAdapter())).setInitialMode(Mode.ACTIVE)
                 .install();
+        for(ConnectionFactory cf : value.getDeployment().getConnector().getConnectionFactories()) {
+
+        }
+
 
     }
 

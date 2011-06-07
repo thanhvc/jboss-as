@@ -22,8 +22,6 @@
 
 package org.jboss.as.connector.subsystems.resourceadapters;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.connector.subsystems.resourceadapters.Constants.ARCHIVE;
 import org.jboss.as.connector.ConnectorServices;
 import org.jboss.as.connector.subsystems.resourceadapters.ResourceAdaptersService.ModifiableResourceAdapeters;
 import org.jboss.as.controller.BasicOperationResult;
@@ -36,12 +34,17 @@ import org.jboss.as.controller.ResultHandler;
 import org.jboss.as.controller.RuntimeTask;
 import org.jboss.as.controller.RuntimeTaskContext;
 import org.jboss.as.controller.operations.common.Util;
-import org.jboss.as.server.BootOperationHandler;
 import org.jboss.dmr.ModelNode;
-import org.jboss.logging.Logger;
+import org.jboss.jca.common.api.metadata.resourceadapter.ResourceAdapter;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceTarget;
+
+import java.util.ArrayList;
+import java.util.Collections;
+
+import static org.jboss.as.connector.subsystems.resourceadapters.Constants.ARCHIVE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
 /**
  * Operation handler responsible for adding a Ra.
@@ -78,17 +81,16 @@ public class RaAdd extends AbstractRaOperation implements ModelAddOperationHandl
                 public void execute(RuntimeTaskContext context) throws OperationFailedException {
                     final ServiceTarget serviceTarget = context.getServiceTarget();
 
-                    ModifiableResourceAdapeters resourceAdapters = buildResourceAdaptersObject(operation);
+                    ResourceAdapter resourceAdapter = buildResourceAdapterObject(operation);
 
                     final ServiceController<?> raService = context.getServiceRegistry().getService(
                             ConnectorServices.RESOURCEADAPTERS_SERVICE);
                     if (raService == null) {
                         serviceTarget
                                 .addService(ConnectorServices.RESOURCEADAPTERS_SERVICE,
-                                        new ResourceAdaptersService(resourceAdapters)).setInitialMode(Mode.ACTIVE).install();
+                                        new ResourceAdaptersService(new ModifiableResourceAdapeters(new ArrayList<ResourceAdapter>(Collections.singletonList(resourceAdapter))))).setInitialMode(Mode.ACTIVE).install();
                     } else {
-                        ((ModifiableResourceAdapeters) raService.getValue()).addAllResourceAdapters(resourceAdapters
-                                .getResourceAdapters());
+                        ((ModifiableResourceAdapeters) raService.getValue()).addResourceAdapter(resourceAdapter);
                     }
 
                     resultHandler.handleResultComplete();
