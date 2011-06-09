@@ -23,7 +23,7 @@ package org.jboss.as.ejb3.component.stateful;
 
 import org.jboss.as.ee.component.BasicComponentInstance;
 import org.jboss.as.ee.component.Component;
-import org.jboss.as.ejb3.component.EJBBusinessMethod;
+import org.jboss.as.ee.component.ComponentAnnotationMetadata;
 import org.jboss.as.ejb3.component.session.SessionBeanComponent;
 import org.jboss.as.naming.ManagedReference;
 import org.jboss.ejb3.cache.Cache;
@@ -62,10 +62,10 @@ public class StatefulSessionComponent extends SessionBeanComponent {
 
     private static final Logger logger = Logger.getLogger(StatefulSessionComponent.class);
 
-    final InterceptorFactory afterBegin;
-    final InterceptorFactory afterCompletion;
-    final InterceptorFactory beforeCompletion;
-    private Map<EJBBusinessMethod, AccessTimeout> methodAccessTimeouts;
+    private final InterceptorFactory afterBegin;
+    private final InterceptorFactory afterCompletion;
+    private final InterceptorFactory beforeCompletion;
+    private final ComponentAnnotationMetadata<AccessTimeout, AccessTimeout> accessTimeout;
 
     /**
      * Construct a new instance.
@@ -78,7 +78,7 @@ public class StatefulSessionComponent extends SessionBeanComponent {
         this.afterBegin = ejbComponentCreateService.getAfterBegin();
         this.afterCompletion = ejbComponentCreateService.getAfterCompletion();
         this.beforeCompletion = ejbComponentCreateService.getBeforeCompletion();
-        this.methodAccessTimeouts = ejbComponentCreateService.getMethodApplicableAccessTimeouts();
+        this.accessTimeout = ejbComponentCreateService.getAccessTimeout();
 
         final StatefulTimeoutInfo statefulTimeout = ejbComponentCreateService.getStatefulTimeout();
         if (statefulTimeout != null) {
@@ -108,15 +108,9 @@ public class StatefulSessionComponent extends SessionBeanComponent {
      * Returns the {@link AccessTimeout} applicable to given method
      */
     public AccessTimeout getAccessTimeout(Method method) {
-        final EJBBusinessMethod ejbMethod = new EJBBusinessMethod(method);
-        final AccessTimeout accessTimeout = this.methodAccessTimeouts.get(ejbMethod);
+        final AccessTimeout accessTimeout = this.accessTimeout.get(method);
         if (accessTimeout != null) {
             return accessTimeout;
-        }
-        // check bean level access timeout
-        final AccessTimeout timeout = this.beanLevelAccessTimeout.get(method.getDeclaringClass().getName());
-        if (timeout != null) {
-            return timeout;
         }
         return new AccessTimeout() {
             @Override
@@ -275,5 +269,17 @@ public class StatefulSessionComponent extends SessionBeanComponent {
     public void stop(final StopContext stopContext) {
         super.stop(stopContext);
         cache.stop();
+    }
+
+    public InterceptorFactory getAfterBegin() {
+        return afterBegin;
+    }
+
+    public InterceptorFactory getAfterCompletion() {
+        return afterCompletion;
+    }
+
+    public InterceptorFactory getBeforeCompletion() {
+        return beforeCompletion;
     }
 }

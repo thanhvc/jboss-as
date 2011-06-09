@@ -36,7 +36,6 @@ import org.jboss.logging.Logger;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 
-import javax.ejb.AccessTimeout;
 import javax.ejb.EJBLocalObject;
 import javax.ejb.EJBObject;
 import javax.ejb.TransactionAttributeType;
@@ -58,7 +57,6 @@ public abstract class SessionBeanComponent extends EJBComponent implements org.j
 
     static final ServiceName ASYNC_EXECUTOR_SERVICE_NAME = ThreadsServices.EXECUTOR.append("ejb3-async");
 
-    protected Map<String, AccessTimeout> beanLevelAccessTimeout;
     private final Set<Method> asynchronousMethods;
     protected Executor asyncExecutor;
     private final Map<String, ServiceName> viewServices;
@@ -72,7 +70,6 @@ public abstract class SessionBeanComponent extends EJBComponent implements org.j
         super(ejbComponentCreateService);
         viewServices = ejbComponentCreateService.getViewServices();
 
-        this.beanLevelAccessTimeout = ejbComponentCreateService.getBeanAccessTimeout();
         this.asynchronousMethods = null; //ejbComponentCreateService.getAsynchronousMethods();
 //        this.asyncExecutor = (Executor) ejbComponentCreateService.getInjection(ASYNC_EXECUTOR_SERVICE_NAME).getValue();
     }

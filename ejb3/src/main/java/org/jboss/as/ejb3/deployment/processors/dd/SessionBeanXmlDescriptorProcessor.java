@@ -271,7 +271,7 @@ public class SessionBeanXmlDescriptorProcessor extends AbstractEjbXmlDescriptorP
                     return AccessTimeout.class;
                 }
             };
-            singletonComponentDescription.setBeanLevelAccessTimeout(singletonComponentDescription.getEJBClassName(), accessTimeout);
+            singletonComponentDescription.getAccessTimeout().classLevelAnnotation(singletonComponentDescription.getEJBClassName(), accessTimeout);
         }
     }
 

@@ -28,7 +28,6 @@ import org.jboss.as.server.deployment.annotation.CompositeIndex;
 import org.jboss.invocation.proxy.MethodIdentifier;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
-import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.MethodInfo;
@@ -36,10 +35,8 @@ import org.jboss.jandex.Type;
 import org.jboss.logging.Logger;
 
 import javax.ejb.AccessTimeout;
-import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Processes the {@link javax.ejb.AccessTimeout} annotation on a session bean, which allows concurrent access (like @Singleton and @Stateful beans),
@@ -89,11 +86,10 @@ public class AccessTimeoutAnnotationProcessor extends AbstractAnnotationEJBProce
 
         for (AnnotationInstance annotationInstance : annotations) {
             AnnotationTarget target = annotationInstance.target();
-            AccessTimeout accessTimeout = this.getAccessTimeout(annotationInstance);
             if (target instanceof ClassInfo) {
                 // bean level
-                componentDescription.setBeanLevelAccessTimeout(((ClassInfo) target).name().toString(), accessTimeout);
-                logger.debug("Bean " + componentDescription.getEJBName() + " marked for access timeout: " + accessTimeout);
+                componentDescription.getAccessTimeout().classLevelAnnotation(((ClassInfo) target).name().toString(), annotationInstance);
+                logger.debug("Bean " + componentDescription.getEJBName() + " marked for access timeout: " + annotationInstance);
             } else if (target instanceof MethodInfo) {
                 // method specific access timeout
                 final MethodInfo methodInfo = (MethodInfo) target;
@@ -103,32 +99,10 @@ public class AccessTimeoutAnnotationProcessor extends AbstractAnnotationEJBProce
                     argTypes[i++] = argType.name().toString();
                 }
                 MethodIdentifier identifier = MethodIdentifier.getIdentifier(methodInfo.returnType().name().toString(), methodInfo.name(), argTypes);
-                componentDescription.setAccessTimeout(accessTimeout, identifier);
+                componentDescription.getAccessTimeout().methodLevelAnnotation(identifier, annotationInstance);
             }
         }
     }
 
-    private AccessTimeout getAccessTimeout(AnnotationInstance annotationInstance) {
-        final long timeout = annotationInstance.value().asLong();
-        AnnotationValue unitAnnVal = annotationInstance.value("unit");
-        final TimeUnit unit = unitAnnVal != null ? TimeUnit.valueOf(unitAnnVal.asEnum()) : TimeUnit.MILLISECONDS;
-        return new AccessTimeout() {
-            @Override
-            public long value() {
-                return timeout;
-            }
-
-            @Override
-            public TimeUnit unit() {
-                return unit;
-            }
-
-            @Override
-            public Class<? extends Annotation> annotationType() {
-                return AccessTimeout.class;
-            }
-        };
-
-    }
 
 }

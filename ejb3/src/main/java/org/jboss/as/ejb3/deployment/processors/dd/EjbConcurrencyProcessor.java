@@ -114,13 +114,7 @@ public class EjbConcurrencyProcessor implements DeploymentUnitProcessor {
                 iterator.remove();
             }
         }
-        Iterator<Map.Entry<MethodIdentifier, AccessTimeout>> iterator2 = description.getMethodApplicableAccessTimeouts().entrySet().iterator();
-        while (iterator2.hasNext()) {
-            Map.Entry<MethodIdentifier, AccessTimeout> entry = iterator2.next();
-            if (annotationOverridden(classIndex, index, entry.getKey(), AccessTimeout.class)) {
-                iterator.remove();
-            }
-        }
+       description.getAccessTimeout().checkMethodOverrides(componentClass, index);
 
     }
 
@@ -154,7 +148,8 @@ public class EjbConcurrencyProcessor implements DeploymentUnitProcessor {
                 }
                 final AccessTimeoutMetaData accessTimeout = concurrentMethod.getAccessTimeout();
                 if(accessTimeout != null) {
-                    singletonComponentDescription.setAccessTimeout(new AccessTimeout() {
+
+                    singletonComponentDescription.getAccessTimeout().methodLevelAnnotation(methodIdentifier, new AccessTimeout() {
                         @Override
                         public long value() {
                             return accessTimeout.getTimeout();
@@ -169,7 +164,7 @@ public class EjbConcurrencyProcessor implements DeploymentUnitProcessor {
                         public Class<? extends Annotation> annotationType() {
                             return AccessTimeout.class;
                         }
-                    }, methodIdentifier);
+                    });
                 }
             }
         }

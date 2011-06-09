@@ -24,6 +24,7 @@ package org.jboss.as.ejb3.component.singleton;
 
 import org.jboss.as.ee.component.BasicComponentInstance;
 import org.jboss.as.ee.component.Component;
+import org.jboss.as.ee.component.ComponentAnnotationMetadata;
 import org.jboss.as.ee.component.ComponentInstance;
 import org.jboss.as.ejb3.component.EJBBusinessMethod;
 import org.jboss.as.ejb3.component.session.SessionBeanComponent;
@@ -62,7 +63,7 @@ public class SingletonComponent extends SessionBeanComponent implements Lockable
 
     private Map<EJBBusinessMethod, LockType> methodLockTypes;
 
-    private Map<EJBBusinessMethod, AccessTimeout> methodAccessTimeouts;
+    private ComponentAnnotationMetadata<AccessTimeout, AccessTimeout> accessTimeout;
 
     private final List<ServiceName> dependsOn;
 
@@ -80,7 +81,7 @@ public class SingletonComponent extends SessionBeanComponent implements Lockable
 
         this.beanLevelLockType = singletonComponentCreateService.getBeanLockType();
         this.methodLockTypes = singletonComponentCreateService.getMethodApplicableLockTypes();
-        this.methodAccessTimeouts = singletonComponentCreateService.getMethodApplicableAccessTimeouts();
+        this.accessTimeout  = singletonComponentCreateService.getAccessTimeout();
     }
 
     @Override
@@ -149,15 +150,10 @@ public class SingletonComponent extends SessionBeanComponent implements Lockable
 
     @Override
     public AccessTimeout getAccessTimeout(Method method) {
-        final EJBBusinessMethod ejbMethod = new EJBBusinessMethod(method);
-        final AccessTimeout accessTimeout = this.methodAccessTimeouts.get(ejbMethod);
+        final AccessTimeout accessTimeout = this.accessTimeout.get(method);
+
         if (accessTimeout != null) {
             return accessTimeout;
-        }
-        // check bean level access timeout
-        final AccessTimeout beanTimeout = this.beanLevelAccessTimeout.get(method.getDeclaringClass().getName());
-        if (beanTimeout != null) {
-            return beanTimeout;
         }
         //TODO: this should be configurable
         return new AccessTimeout() {

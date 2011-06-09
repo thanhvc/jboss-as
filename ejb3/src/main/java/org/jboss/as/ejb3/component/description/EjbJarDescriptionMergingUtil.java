@@ -23,6 +23,7 @@
 package org.jboss.as.ejb3.component.description;
 
 
+import org.jboss.as.ee.component.ComponentAnnotationMetadata;
 import org.jboss.as.ee.component.ViewDescription;
 import org.jboss.as.ejb3.component.EJBViewDescription;
 import org.jboss.as.ejb3.component.MethodIntf;
@@ -33,7 +34,6 @@ import org.jboss.as.ejb3.component.stateless.StatelessComponentDescription;
 import org.jboss.as.ejb3.deployment.EjbJarDescription;
 import org.jboss.msc.service.ServiceName;
 
-import javax.ejb.AccessTimeout;
 import javax.ejb.ConcurrencyManagementType;
 import javax.ejb.LockType;
 import java.util.ArrayList;
@@ -212,15 +212,7 @@ public class EjbJarDescriptionMergingUtil {
         }
 
         // access timeout
-        AccessTimeout overrideAccessTimeout = override.getBeanLevelAccessTimeout().get(mergedBean.getEJBClassName());
-        if (overrideAccessTimeout != null) {
-            mergedBean.setBeanLevelAccessTimeout(mergedBean.getEJBClassName(), overrideAccessTimeout);
-        } else {
-            AccessTimeout originalAccessTimeout = original.getBeanLevelAccessTimeout().get(mergedBean.getEJBClassName());
-            if (originalAccessTimeout != null) {
-                mergedBean.setBeanLevelAccessTimeout(mergedBean.getEJBClassName(), originalAccessTimeout);
-            }
-        }
+        ComponentAnnotationMetadata.merge(mergedBean.getAccessTimeout(), original.getAccessTimeout(), override.getAccessTimeout());
 
         // views
         Collection<ViewDescription> overrideViews = override.getViews();
