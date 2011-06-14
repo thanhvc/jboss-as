@@ -69,7 +69,9 @@
         <version.jacorb>2.3.1jboss.patch01-brew</version.jacorb>
         <version.javax.activation.activation>1.1.1</version.javax.activation.activation>
         <version.javax.enterprise.cdi-api>1.0-SP4</version.javax.enterprise.cdi-api>
+        <version.javax.faces.jsf-api.1.2>1.2_13</version.javax.faces.jsf-api.1.2>
         <version.javax.faces.jsf-impl>2.0.4-b09</version.javax.faces.jsf-impl>
+        <version.javax.faces.jsf-impl.1.2>1.2_13</version.javax.faces.jsf-impl.1.2>
         <version.javax.inject.javax.inject>1</version.javax.inject.javax.inject>
         <version.javax.jws.jsr181-api>1.0-MR1</version.javax.jws.jsr181-api>
         <version.javax.mail.mail>1.4.4</version.javax.mail.mail>
@@ -206,10 +208,10 @@
         <version.sun.jaxb>2.2</version.sun.jaxb>
         <version.sun.saaj-impl>1.3.2</version.sun.saaj-impl>
         <version.wsdl4j>1.6.2</version.wsdl4j>
-        
+
         <!-- Plugin versions -->
         <version.surefire.plugin>2.8.1</version.surefire.plugin>
-        
+
         <!-- Surefire args -->
         <surefire.jpda.args />
         <surefire.system.args>-da ${surefire.jpda.args}</surefire.system.args>
@@ -2828,6 +2830,18 @@
             </dependency>
 
             <dependency>
+                <groupId>javax.faces</groupId>
+                <artifactId>jsf-api</artifactId>
+                <version>${version.javax.faces.jsf-api.1.2}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>javax.faces</groupId>
+                <artifactId>jsf-impl</artifactId>
+                <version>${version.javax.faces.jsf-impl.1.2}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>javax.inject</groupId>
                 <artifactId>javax.inject</artifactId>
                 <version>${version.javax.inject.javax.inject}</version>
@@ -2969,25 +2983,25 @@
               <artifactId>arquillian-container-spi</artifactId>
               <version>${version.org.jboss.arquillian.core}</version>
             </dependency>
-            
+
             <dependency>
               <groupId>org.jboss.arquillian.container</groupId>
               <artifactId>arquillian-container-test-api</artifactId>
               <version>${version.org.jboss.arquillian.core}</version>
             </dependency>
-            
+
             <dependency>
               <groupId>org.jboss.arquillian.container</groupId>
               <artifactId>arquillian-container-test-spi</artifactId>
               <version>${version.org.jboss.arquillian.core}</version>
             </dependency>
-            
+
             <dependency>
               <groupId>org.jboss.arquillian.container</groupId>
               <artifactId>arquillian-container-test-impl-base</artifactId>
               <version>${version.org.jboss.arquillian.core}</version>
             </dependency>
-            
+
             <dependency>
                 <groupId>org.jboss.arquillian.core</groupId>
                 <artifactId>arquillian-core-api</artifactId>
@@ -3011,7 +3025,7 @@
                 <artifactId>arquillian-junit-core</artifactId>
                 <version>${version.org.jboss.arquillian.core}</version>
             </dependency>
-            
+
             <dependency>
               <groupId>org.jboss.arquillian.junit</groupId>
               <artifactId>arquillian-junit-container</artifactId>
@@ -3047,7 +3061,7 @@
                 <artifactId>arquillian-test-impl-base</artifactId>
                 <version>${version.org.jboss.arquillian.core}</version>
             </dependency>
-            
+
             <dependency>
                 <groupId>org.jboss.arquillian.testenricher</groupId>
                 <artifactId>arquillian-testenricher-cdi</artifactId>
@@ -4035,7 +4049,7 @@
                     </exclusion>
                 </exclusions>
             </dependency>
-            
+
             <dependency>
                 <groupId>org.jboss.shrinkwrap</groupId>
                 <artifactId>shrinkwrap-spi</artifactId>

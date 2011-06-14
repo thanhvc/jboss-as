@@ -50,6 +50,7 @@ import org.jboss.as.web.deployment.WebParsingDeploymentProcessor;
 import org.jboss.as.web.deployment.component.WebComponentProcessor;
 import org.jboss.as.web.deployment.jsf.JsfAnnotationProcessor;
 import org.jboss.as.web.deployment.jsf.JsfManagedBeanProcessor;
+import org.jboss.as.web.deployment.jsf.JsfVersionProcessor;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder.DependencyType;
 import org.jboss.msc.service.ServiceController.Mode;
@@ -119,6 +120,7 @@ class WebSubsystemAdd implements ModelAddOperationHandler, BootOperationHandler,
                     ctx.addDeploymentProcessor(Phase.PARSE, Phase.PARSE_WEB_COMPONENTS, new WebComponentProcessor());
                     ctx.addDeploymentProcessor(Phase.PARSE, Phase.PARSE_EAR_CONTEXT_ROOT, new EarContextRootProcessor());
                     ctx.addDeploymentProcessor(Phase.PARSE, Phase.PARSE_WEB_MERGE_METADATA, new WarMetaDataProcessor());
+                    ctx.addDeploymentProcessor(Phase.PARSE, Phase.PARSE_JSF_VERSION, new JsfVersionProcessor());
                     ctx.addDeploymentProcessor(Phase.DEPENDENCIES, Phase.DEPENDENCIES_WAR_MODULE, new WarClassloadingDependencyProcessor());
                     ctx.addDeploymentProcessor(Phase.POST_MODULE, Phase.POST_MODULE_JSF_MANAGED_BEANS, new JsfManagedBeanProcessor());
                     ctx.addDeploymentProcessor(Phase.INSTALL, Phase.INSTALL_SERVLET_INIT_DEPLOYMENT, new ServletContainerInitializerDeploymentProcessor());

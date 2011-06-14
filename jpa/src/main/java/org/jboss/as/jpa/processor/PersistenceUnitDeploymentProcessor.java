@@ -274,7 +274,7 @@ public class PersistenceUnitDeploymentProcessor implements DeploymentUnitProcess
 
                         if (pu.getProperties().containsKey(JNDI_PROPERTY)) {
                             String jndiName = pu.getProperties().get(JNDI_PROPERTY).toString();
-                            final ServiceName bindingServiceName = ContextNames.serviceNameOfEnvEntry(eeModuleDescription.getApplicationName(), eeModuleDescription.getModuleName(), eeModuleDescription.getModuleName(), false, jndiName);
+                            final ServiceName bindingServiceName = ContextNames.serviceNameOfContext(eeModuleDescription.getApplicationName(), eeModuleDescription.getModuleName(), eeModuleDescription.getModuleName(), jndiName);
                             final BinderService binderService = new BinderService(jndiName);
                             serviceTarget.addService(bindingServiceName, binderService)
                                     .addDependency(ContextNames.serviceNameOfNamingStore(eeModuleDescription.getApplicationName(), eeModuleDescription.getModuleName(), eeModuleDescription.getModuleName(), jndiName),NamingStore.class,  binderService.getNamingStoreInjector())
